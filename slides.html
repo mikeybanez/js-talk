@@ -216,6 +216,25 @@ things we automate: building (includes transpiling, bundling, minification), doc
 
 things we want to automate: linting
 
+---
+
+class: middle
+
+```javascript
+gulp.task('browserify', function() {
+    return browserify('./src/index.ts')
+      .plugin('tsify', {
+        target: 'ES5',
+        declaration: true })
+      .require('./src/index.ts', {expose: 'xjs'})
+      .bundle()
+      .pipe(source('xjs.js'))
+      .pipe(gulp.dest('dist'));
+  });
+```
+
+???
+
 how we did it: gulp
 
 how to do it now? grunt, npm scripts are also options
@@ -228,13 +247,96 @@ class: center, middle, inverse
 
 # Lesson 7: Modernize your JavaScript for much success
 
+---
+
+class: middle
+
+### Promises
+
+```javascript
+var xjs = require('xjs');
+
+xjs.ready().then(xjs.Source.getCurrentSource)
+  .then(function(source){
+     return source.getSceneId();
+  }).then(function(id){
+    return xjs.Scene.getById(id)
+  }).then(function(scene){
+    return scene.getSources();
+  }).then(function(items){
+      var p;
+      for (var i in items) {
+        items[i].getName().then(function(name) {
+          p = document.createElement('p');
+          p.textContent = name;
+          document.body.appendChild(p);
+        });
+      }
+  });
+```
+
+???
+
+Promises to avoid callback hell
+
+---
+
+class: middle
+
+### Classes
+
+```typescript
+export class CameraDevice implements Addable {
+  private _id: string;
+  private _name: string;
+
+  constructor(props?: {}) {
+    this._id   = props['id'];
+    this._name = props['name'];
+  }
+```
+
 ???
 
 TypeScript: use ES2015 features
 
-Promises to avoid callback hell
-
 JS Classes
+
+---
+
+class: middle
+
+`version.ts`
+```javascript
+export function getVersion(): string {
+  let xbcPattern = /XSplit Broadcaster\s(.*?)\s?/;
+  let xbcMatch = navigator.appVersion.match(xbcPattern);
+  if (xbcMatch !== null) {
+    return xbcMatch[1];
+  } else {
+    throw new Error('not loaded in XSplit Broadcaster');
+  }
+}
+
+```
+
+`item.ts`
+```typescript
+import {IItemLayout} from './ilayout'
+import {minVersion, versionCompare, getVersion} from 'util/version'
+
+export class Item implements IItemLayout {
+  getSourceId(): Promise<string> {
+      return new Promise((resolve, reject) => {
+        if (versionCompare(getVersion()).is.lessThan(minVersion)) {
+          // ...  
+        }
+      })
+    }
+}
+```
+
+???
 
 Module system to have easier code structure 
 
@@ -247,16 +349,6 @@ class: center, middle, inverse
 ---
 
 class: middle
-
-```javascript
-xjs.ready()
-  .then(Source.getCurrentSource)
-  .then(function(mySource) {
-    return mySource.loadConfig();
-  }).then(function(config) {
-    // apply the loaded configuration object onto the source
-  });
-```
 
 ```javascript
 var button = document.getElementById('openDialogButton');
@@ -279,7 +371,7 @@ button.addEventListener('click', function() {
 
 Learn techniques from libraries and frameworks in the wild
 
-Beautiful interface with a fluent API with our method chaining: examples are with setting properties, or initializing a NewDialog
+Beautiful interface with a fluent interface with our method chaining: examples are with setting properties, or initializing a NewDialog
 
 Beautiful code with coding standards. In addition to linting, use your text editor (.editorrc, Sublime margins + whitespace display settings)
 
